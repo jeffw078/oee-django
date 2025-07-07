@@ -1,0 +1,396 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard OEE - Relatórios{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header com Indicadores Principais -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-custom">
+                <div class="card-header-custom">
+                    <h2 class="mb-0">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard OEE - {{ data_referencia|date:"d/m/Y" }}
+                    </h2>
+                    <p class="mb-0 mt-2">Indicadores de Eficiência Global dos Equipamentos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indicadores Principais OEE -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <div class="display-6 text-primary mb-2">{{ oee_hoje.utilizacao }}%</div>
+                    <h5 class="card-title text-primary">UTILIZAÇÃO</h5>
+                    <p class="card-text small text-muted">Horas trabalhadas / Horas disponíveis</p>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-primary" style="width: {{ oee_hoje.utilizacao }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <div class="display-6 text-success mb-2">{{ oee_hoje.eficiencia }}%</div>
+                    <h5 class="card-title text-success">EFICIÊNCIA</h5>
+                    <p class="card-text small text-muted">Tempo padrão / Tempo real</p>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: {{ oee_hoje.eficiencia }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <div class="display-6 text-warning mb-2">{{ oee_hoje.qualidade }}%</div>
+                    <h5 class="card-title text-warning">QUALIDADE</h5>
+                    <p class="card-text small text-muted">100% - % de defeitos</p>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-warning" style="width: {{ oee_hoje.qualidade }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <div class="display-6 text-danger mb-2">{{ oee_hoje.oee }}%</div>
+                    <h5 class="card-title text-danger">OEE FINAL</h5>
+                    <p class="card-text small text-muted">Utilização × Eficiência × Qualidade</p>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-danger" style="width: {{ oee_hoje.oee }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indicadores Complementares -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <div class="h3 text-primary">{{ indicadores.total_apontamentos }}</div>
+                    <p class="mb-0">Apontamentos Hoje</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <div class="h3 text-danger">{{ indicadores.total_defeitos }}</div>
+                    <p class="mb-0">Defeitos Detectados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <div class="h3 text-warning">{{ indicadores.total_paradas }}</div>
+                    <p class="mb-0">Paradas Registradas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <div class="h3 text-success">{{ indicadores.soldadores_ativos }}</div>
+                    <p class="mb-0">Soldadores Ativos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row">
+        <!-- Gráfico OEE Últimos 7 Dias -->
+        <div class="col-lg-8 mb-4">
+            <div class="card card-custom">
+                <div class="card-header-custom d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-chart-line"></i>
+                        Evolução OEE - Últimos 7 Dias
+                    </h4>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="carregarGraficoOEE(7)">7 dias</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="carregarGraficoOEE(15)">15 dias</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="carregarGraficoOEE(30)">30 dias</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="graficoOEE" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Status Atual e Metas -->
+        <div class="col-lg-4 mb-4">
+            <div class="card card-custom">
+                <div class="card-header-custom">
+                    <h4 class="mb-0">
+                        <i class="fas fa-target"></i>
+                        Metas vs Realizado
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h6>Utilização</h6>
+                        <div class="d-flex justify-content-between">
+                            <span>Atual: {{ oee_hoje.utilizacao }}%</span>
+                            <span>Meta: 85%</span>
+                        </div>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-primary" style="width: {{ oee_hoje.utilizacao }}%"></div>
+                            <div class="progress-bar bg-transparent border-end border-dark border-2" style="width: 85%; position: absolute;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>Eficiência</h6>
+                        <div class="d-flex justify-content-between">
+                            <span>Atual: {{ oee_hoje.eficiencia }}%</span>
+                            <span>Meta: 90%</span>
+                        </div>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-success" style="width: {{ oee_hoje.eficiencia }}%"></div>
+                            <div class="progress-bar bg-transparent border-end border-dark border-2" style="width: 90%; position: absolute;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>Qualidade</h6>
+                        <div class="d-flex justify-content-between">
+                            <span>Atual: {{ oee_hoje.qualidade }}%</span>
+                            <span>Meta: 95%</span>
+                        </div>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-warning" style="width: {{ oee_hoje.qualidade }}%"></div>
+                            <div class="progress-bar bg-transparent border-end border-dark border-2" style="width: 95%; position: absolute;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>OEE Final</h6>
+                        <div class="d-flex justify-content-between">
+                            <span>Atual: {{ oee_hoje.oee }}%</span>
+                            <span>Meta: 75%</span>
+                        </div>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-danger" style="width: {{ oee_hoje.oee }}%"></div>
+                            <div class="progress-bar bg-transparent border-end border-dark border-2" style="width: 75%; position: absolute;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <small>
+                            <strong>OEE Mundial:</strong><br>
+                            • Classe Mundial: >85%<br>
+                            • Boa: 60-85%<br>
+                            • Regular: 40-60%<br>
+                            • Baixa: <40%
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acesso Rápido aos Relatórios -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card card-custom">
+                <div class="card-header-custom">
+                    <h4 class="mb-0">
+                        <i class="fas fa-chart-bar"></i>
+                        Relatórios Detalhados
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <a href="{% url 'relatorios:oee' %}" class="card h-100 text-decoration-none border-primary">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                                    <h5 class="card-title">Relatório OEE</h5>
+                                    <p class="card-text">Análise detalhada de OEE por período</p>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <a href="{% url 'relatorios:pontos_melhoria' %}" class="card h-100 text-decoration-none border-warning">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-lightbulb fa-3x text-warning mb-3"></i>
+                                    <h5 class="card-title">Pontos de Melhoria</h5>
+                                    <p class="card-text">Processos com eficiência baixa</p>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <a href="{% url 'relatorios:paradas' %}" class="card h-100 text-decoration-none border-danger">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-pause-circle fa-3x text-danger mb-3"></i>
+                                    <h5 class="card-title">Análise de Paradas</h5>
+                                    <p class="card-text">Relatório de paradas por tipo</p>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <a href="{% url 'relatorios:utilizacao' %}" class="card h-100 text-decoration-none border-info">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-clock fa-3x text-info mb-3"></i>
+                                    <h5 class="card-title">Utilização</h5>
+                                    <p class="card-text">Análise de utilização por turnos</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let graficoOEE = null;
+    
+    // Carregar gráfico OEE
+    function carregarGraficoOEE(periodo = 7) {
+        fetch(`{% url 'relatorios:api_dados_oee' %}?periodo=${periodo}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                criarGraficoOEE(data.dados);
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao carregar dados do gráfico:', error);
+        });
+    }
+    
+    function criarGraficoOEE(dados) {
+        const ctx = document.getElementById('graficoOEE').getContext('2d');
+        
+        // Destruir gráfico anterior se existir
+        if (graficoOEE) {
+            graficoOEE.destroy();
+        }
+        
+        graficoOEE = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dados.map(d => d.data),
+                datasets: [
+                    {
+                        label: 'OEE (%)',
+                        data: dados.map(d => d.oee),
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Utilização (%)',
+                        data: dados.map(d => d.utilizacao),
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Eficiência (%)',
+                        data: dados.map(d => d.eficiencia),
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Qualidade (%)',
+                        data: dados.map(d => d.qualidade),
+                        borderColor: '#ffc107',
+                        backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: false
+                    },
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            title: function(context) {
+                                return context[0].label;
+                            },
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.1)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(0,0,0,0.1)'
+                        }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+    }
+    
+    // Inicializar quando a página carregar
+    document.addEventListener('DOMContentLoaded', function() {
+        carregarGraficoOEE(7);
+        
+        // Atualizar gráfico a cada 5 minutos
+        setInterval(() => {
+            carregarGraficoOEE(7);
+        }, 300000); // 5 minutos
+    });
+</script>
+{% endblock %}

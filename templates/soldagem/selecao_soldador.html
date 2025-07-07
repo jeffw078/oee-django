@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}Seleção de Soldador - Sistema OEE{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="card card-custom">
+                <div class="card-header-custom text-center">
+                    <h2 class="mb-0">
+                        <i class="fas fa-users"></i>
+                        Seleção de Soldador
+                    </h2>
+                    <p class="mb-0 mt-2">Selecione seu nome para iniciar o apontamento</p>
+                </div>
+                
+                <div class="card-body p-4">
+                    {% if soldadores %}
+                        <div class="row g-3">
+                            {% for soldador in soldadores %}
+                                <div class="col-6 col-md-4 col-lg-3">
+                                    <button type="button" 
+                                            class="btn btn-modulo w-100 h-100 d-flex flex-column align-items-center justify-content-center"
+                                            style="min-height: 120px;"
+                                            onclick="selecionarSoldador({{ soldador.id }}, '{{ soldador.usuario.nome_completo }}')">
+                                        <i class="fas fa-user fa-2x mb-2"></i>
+                                        <span class="text-wrap">{{ soldador.usuario.nome_completo }}</span>
+                                    </button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning text-center">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                            <h4>Nenhum soldador cadastrado</h4>
+                            <p>Entre em contato com o administrador para cadastrar soldadores no sistema.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Login -->
+<div class="modal fade" id="modalLogin" tabindex="-1" aria-labelledby="modalLoginLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalLoginLabel">
+                    <i class="fas fa-lock"></i>
+                    Login de Soldador
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formLogin">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-user-circle fa-4x text-primary"></i>
+                        <h4 class="mt-2" id="nomeSoldadorLogin">Nome do Soldador</h4>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="senhaLogin" class="form-label">Senha de Acesso:</label>
+                        <input type="password" 
+                               class="form-control form-control-lg text-center" 
+                               id="senhaLogin" 
+                               placeholder="Digite sua senha"
+                               maxlength="20"
+                               required
+                               autocomplete="off">
+                    </div>
+                    
+                    <div id="erroLogin" class="alert alert-danger d-none">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span id="mensagemErro"></span>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="realizarLogin()">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Entrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let soldadorSelecionado = null;
+    
+    function selecionarSoldador(soldadorId, nomeSoldador) {
+        soldadorSelecionado = soldadorId;
+        document.getElementById('nomeSoldadorLogin').textContent = nomeSoldador;
+        document.getElementById('senhaLogin').value = '';
+        document.getElementById('erroLogin').classList.add('d-none');
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('modalLogin'));
+        modal.show();
+        
+        // Focar no campo de senha
+        setTimeout(() => {
+            document.getElementById('senhaLogin').focus();
+        }, 500);
+    }
+    
+    function realizarLogin() {
+        const senha = document.getElementById('senhaLogin').value;
+        
+        if (!senha) {
+            mostrarErro('Digite a senha de acesso');
+            return;
+        }
+        
+        if (!soldadorSelecionado) {
+            mostrarErro('Soldador não selecionado');
+            return;
+        }
+        
+        toggleLoading(true);
+        
+        // Dados para o login
+        const dados = {
+            soldador_id: soldadorSelecionado,
+            senha: senha
+        };
+        
+        // Verificar se está online
+        if (window.offlineManager && !window.offlineManager.isOnline) {
+            // Salvar para sincronização posterior
+            const id = window.offlineManager.salvarDadoOffline('login', dados);
+            
+            showAlert('Login salvo para quando a conexão for restabelecida.', 'warning');
+            toggleLoading(false);
+            return;
+        }
+        
+        // Fazer login online
+        fetch('{% url "soldagem:login_soldador" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(dados)
+        })
+        .then(response => response.json())
+        .then(data => {
+            toggleLoading(false);
+            
+            if (data.success) {
+                showAlert('Login realizado com sucesso!', 'success');
+                
+                // Fechar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalLogin'));
+                modal.hide();
+                
+                // Redirecionar
+                setTimeout(() => {
+                    window.location.href = data.redirect_url;
+                }, 1000);
+            } else {
+                mostrarErro(data.message || 'Erro no login');
+            }
+        })
+        .catch(error => {
+            toggleLoading(false);
+            console.error('Erro:', error);
+            mostrarErro('Erro de conexão. Tente novamente.');
+        });
+    }
+    
+    function mostrarErro(mensagem) {
+        document.getElementById('mensagemErro').textContent = mensagem;
+        document.getElementById('erroLogin').classList.remove('d-none');
+    }
+    
+    // Permitir login com Enter
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('senhaLogin').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                realizarLogin();
+            }
+        });
+        
+        // Limpar erro quando começar a digitar
+        document.getElementById('senhaLogin').addEventListener('input', function() {
+            document.getElementById('erroLogin').classList.add('d-none');
+        });
+    });
+</script>
+{% endblock %}

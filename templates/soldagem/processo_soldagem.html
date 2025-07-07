@@ -1,0 +1,556 @@
+{% extends 'base.html' %}
+
+{% block title %}Soldagem - {{ apontamento.componente.nome }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h3 class="mb-0">
+                    <i class="fas fa-fire"></i>
+                    Soldagem em Andamento: {{ apontamento.modulo.nome }}
+                </h3>
+            </div>
+            
+            <div class="card-body p-4">
+                <!-- Informações do Processo -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-info-circle"></i>
+                                    Dados do Processo
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Pedido:</strong> {{ apontamento.pedido.numero }}</p>
+                                <p><strong>Poste/Tubo:</strong> {{ apontamento.numero_poste_tubo }}</p>
+                                {% if apontamento.diametro %}
+                                    <p><strong>Diâmetro do Tubo:</strong> {{ apontamento.diametro }}mm</p>
+                                {% endif %}
+                                <p><strong>Componente:</strong> {{ apontamento.componente.nome }}</p>
+                                <p class="mb-0"><strong>Início:</strong> {{ apontamento.inicio_processo|date:"H:i:s" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-clock"></i>
+                                    Cronômetro
+                                </h5>
+                            </div>
+                            <div class="card-body text-center">
+                                <div class="display-4 text-primary mb-3" id="cronometro">
+                                    00:00:00
+                                </div>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small class="text-muted">Tempo Padrão</small>
+                                        <p class="h5 text-success">{{ apontamento.tempo_padrao }}min</p>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Eficiência</small>
+                                        <p class="h5" id="eficiencia">---%</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Botão Principal -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="text-center">
+                            <button type="button" 
+                                    class="btn btn-success btn-lg px-5 py-3"
+                                    style="font-size: 1.5rem;"
+                                    onclick="finalizarSoldagem()">
+                                <i class="fas fa-check-circle fa-2x"></i>
+                                <br>
+                                FINALIZAR ATIVIDADE
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Botões de Ação -->
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <button type="button" 
+                                class="btn btn-parada w-100 h-100"
+                                style="min-height: 80px;"
+                                onclick="iniciarParada()">
+                            <i class="fas fa-pause fa-2x mb-2"></i>
+                            <br>
+                            PAUSE
+                        </button>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <button type="button" 
+                                class="btn btn-qualidade w-100 h-100"
+                                style="min-height: 80px;"
+                                onclick="acessarQualidade()">
+                            <i class="fas fa-search fa-2x mb-2"></i>
+                            <br>
+                            QUALIDADE
+                        </button>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <button type="button" 
+                                class="btn btn-parada w-100 h-100"
+                                style="min-height: 80px; background: #6f42c1;"
+                                onclick="acessarManutencao()">
+                            <i class="fas fa-wrench fa-2x mb-2"></i>
+                            <br>
+                            MANUTENÇÃO
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Finalizar Soldagem -->
+<div class="modal fade" id="modalFinalizarSoldagem" tabindex="-1" aria-labelledby="modalFinalizarSoldagemLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalFinalizarSoldagemLabel">
+                    <i class="fas fa-check-circle"></i>
+                    Finalizar Soldagem
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-flag-checkered fa-4x text-success"></i>
+                    <h4 class="mt-2">Soldagem Concluída</h4>
+                </div>
+                
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Componente:</strong>
+                        <p>{{ apontamento.componente.nome }}</p>
+                    </div>
+                    <div class="col-6">
+                        <strong>Tempo Decorrido:</strong>
+                        <p id="tempoFinalDecorrido">--:--:--</p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Tempo Padrão:</strong>
+                        <p>{{ apontamento.tempo_padrao }}min</p>
+                    </div>
+                    <div class="col-6">
+                        <strong>Eficiência:</strong>
+                        <p id="eficienciaFinal" class="h5">---%</p>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    Confirme a finalização da soldagem. Esta ação não pode ser desfeita.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-success btn-lg" onclick="confirmarFinalizacao()">
+                    <i class="fas fa-check"></i>
+                    CONFIRMAR FINALIZAÇÃO
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Parada -->
+<div class="modal fade" id="modalParada" tabindex="-1" aria-labelledby="modalParadaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalParadaLabel">
+                    <i class="fas fa-pause-circle"></i>
+                    Pausa durante Soldagem
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="motivoParada" class="form-label">Motivo da pausa:</label>
+                    <select class="form-select form-select-lg" id="motivoParada" required>
+                        <option value="">Selecione o motivo...</option>
+                        {% for tipo in tipos_parada_geral %}
+                            <option value="{{ tipo.id }}">{{ tipo.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Atenção:</strong> A soldagem será pausada. Você precisará retomar o processo posteriormente.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-warning" onclick="confirmarParada()">
+                    <i class="fas fa-pause"></i>
+                    INICIAR PAUSA
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Senha Especial -->
+<div class="modal fade" id="modalSenhaEspecial" tabindex="-1" aria-labelledby="modalSenhaEspecialLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalSenhaEspecialLabel">
+                    <i class="fas fa-key"></i>
+                    Acesso Restrito
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-lock fa-4x text-warning"></i>
+                    <h4 class="mt-2" id="tipoAcessoEspecial">Área Restrita</h4>
+                    <p class="text-muted">Digite a senha de acesso especial</p>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="senhaEspecial" class="form-label">Senha:</label>
+                    <input type="password" 
+                           class="form-control form-control-lg text-center" 
+                           id="senhaEspecial" 
+                           placeholder="Digite a senha"
+                           required>
+                </div>
+                
+                <div id="erroSenhaEspecial" class="alert alert-danger d-none">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span id="mensagemErroEspecial"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="validarSenhaEspecial()">
+                    <i class="fas fa-unlock"></i>
+                    Acessar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let inicioSoldagem = new Date('{{ apontamento.inicio_processo|date:"c" }}');
+    let tempoPadraoMinutos = {{ apontamento.tempo_padrao }};
+    let tipoAcesso = null;
+    
+    function atualizarCronometro() {
+        const agora = new Date();
+        const diff = agora - inicioSoldagem;
+        
+        const horas = Math.floor(diff / 3600000);
+        const minutos = Math.floor((diff % 3600000) / 60000);
+        const segundos = Math.floor((diff % 60000) / 1000);
+        
+        const tempoFormatado = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+        document.getElementById('cronometro').textContent = tempoFormatado;
+        
+        // Calcular eficiência em tempo real
+        const minutosDecorridos = diff / 60000;
+        if (minutosDecorridos > 0) {
+            const eficiencia = (tempoPadraoMinutos / minutosDecorridos) * 100;
+            const eficienciaElement = document.getElementById('eficiencia');
+            eficienciaElement.textContent = eficiencia.toFixed(1) + '%';
+            
+            // Colorir baseado na eficiência
+            if (eficiencia >= 100) {
+                eficienciaElement.className = 'h5 text-success';
+            } else if (eficiencia >= 80) {
+                eficienciaElement.className = 'h5 text-warning';
+            } else {
+                eficienciaElement.className = 'h5 text-danger';
+            }
+        }
+    }
+    
+    function finalizarSoldagem() {
+        const agora = new Date();
+        const diff = agora - inicioSoldagem;
+        const minutosDecorridos = diff / 60000;
+        const eficiencia = (tempoPadraoMinutos / minutosDecorridos) * 100;
+        
+        // Atualizar modal com dados finais
+        const horas = Math.floor(diff / 3600000);
+        const minutos = Math.floor((diff % 3600000) / 60000);
+        const segundos = Math.floor((diff % 60000) / 1000);
+        const tempoFinal = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+        
+        document.getElementById('tempoFinalDecorrido').textContent = tempoFinal;
+        document.getElementById('eficienciaFinal').textContent = eficiencia.toFixed(1) + '%';
+        
+        // Colorir eficiência final
+        const eficienciaFinalElement = document.getElementById('eficienciaFinal');
+        if (eficiencia >= 100) {
+            eficienciaFinalElement.className = 'h5 text-success';
+        } else if (eficiencia >= 80) {
+            eficienciaFinalElement.className = 'h5 text-warning';
+        } else {
+            eficienciaFinalElement.className = 'h5 text-danger';
+        }
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('modalFinalizarSoldagem'));
+        modal.show();
+    }
+    
+    function confirmarFinalizacao() {
+        toggleLoading(true);
+        
+        // Verificar se está online
+        if (window.offlineManager && !window.offlineManager.isOnline) {
+            // Salvar para sincronização posterior
+            const dados = {
+                apontamento_id: {{ apontamento.id }},
+                timestamp_finalizacao: new Date().toISOString()
+            };
+            
+            const id = window.offlineManager.salvarDadoOffline('finalizar_soldagem', dados);
+            
+            showAlert('Soldagem finalizada e salva para sincronização.', 'warning');
+            toggleLoading(false);
+            
+            // Redirecionar para tela principal
+            setTimeout(() => {
+                window.location.href = '/soldagem/apontamento/';
+            }, 1500);
+            return;
+        }
+        
+        // Fazer requisição online
+        fetch('{% url "soldagem:finalizar_soldagem" apontamento.id %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            toggleLoading(false);
+            
+            if (data.success) {
+                showAlert('Soldagem finalizada com sucesso!', 'success');
+                
+                // Fechar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalFinalizarSoldagem'));
+                modal.hide();
+                
+                // Mostrar resultados finais
+                showAlert(`Eficiência: ${data.eficiencia.toFixed(1)}% | Tempo: ${data.tempo_real.toFixed(1)}min`, 'info');
+                
+                // Redirecionar
+                setTimeout(() => {
+                    window.location.href = data.redirect_url;
+                }, 2000);
+            } else {
+                showAlert(data.message || 'Erro ao finalizar soldagem', 'error');
+            }
+        })
+        .catch(error => {
+            toggleLoading(false);
+            console.error('Erro:', error);
+            showAlert('Erro de conexão. Dados salvos para sincronização.', 'warning');
+            
+            // Salvar offline em caso de erro
+            if (window.offlineManager) {
+                const dados = {
+                    apontamento_id: {{ apontamento.id }},
+                    timestamp_finalizacao: new Date().toISOString()
+                };
+                window.offlineManager.salvarDadoOffline('finalizar_soldagem', dados);
+            }
+        });
+    }
+    
+    function iniciarParada() {
+        const modal = new bootstrap.Modal(document.getElementById('modalParada'));
+        modal.show();
+    }
+    
+    function confirmarParada() {
+        const motivoId = document.getElementById('motivoParada').value;
+        
+        if (!motivoId) {
+            showAlert('Selecione o motivo da parada.', 'warning');
+            return;
+        }
+        
+        toggleLoading(true);
+        
+        const dados = {
+            apontamento_id: {{ apontamento.id }},
+            tipo_parada_id: motivoId,
+            timestamp_inicio: new Date().toISOString()
+        };
+        
+        // Verificar se está online
+        if (window.offlineManager && !window.offlineManager.isOnline) {
+            // Salvar para sincronização posterior
+            const id = window.offlineManager.salvarDadoOffline('iniciar_parada', dados);
+            
+            showAlert('Parada iniciada e salva para sincronização.', 'warning');
+            toggleLoading(false);
+            
+            // Fechar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalParada'));
+            modal.hide();
+            
+            // Redirecionar para tela de apontamento
+            setTimeout(() => {
+                window.location.href = '/soldagem/apontamento/';
+            }, 1500);
+            return;
+        }
+        
+        // Fazer requisição online
+        fetch('/soldagem/iniciar_parada/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(dados)
+        })
+        .then(response => response.json())
+        .then(data => {
+            toggleLoading(false);
+            
+            if (data.success) {
+                showAlert('Parada iniciada!', 'success');
+                
+                // Fechar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalParada'));
+                modal.hide();
+                
+                // Redirecionar
+                setTimeout(() => {
+                    window.location.href = '/soldagem/apontamento/';
+                }, 1000);
+            } else {
+                showAlert(data.message || 'Erro ao iniciar parada', 'error');
+            }
+        })
+        .catch(error => {
+            toggleLoading(false);
+            console.error('Erro:', error);
+            showAlert('Erro de conexão. Dados salvos para sincronização.', 'warning');
+            
+            // Salvar offline em caso de erro
+            if (window.offlineManager) {
+                window.offlineManager.salvarDadoOffline('iniciar_parada', dados);
+            }
+        });
+    }
+    
+    function acessarQualidade() {
+        tipoAcesso = 'qualidade';
+        document.getElementById('tipoAcessoEspecial').textContent = 'Acesso à Qualidade';
+        mostrarModalSenhaEspecial();
+    }
+    
+    function acessarManutencao() {
+        tipoAcesso = 'manutencao';
+        document.getElementById('tipoAcessoEspecial').textContent = 'Acesso à Manutenção';
+        mostrarModalSenhaEspecial();
+    }
+    
+    function mostrarModalSenhaEspecial() {
+        document.getElementById('senhaEspecial').value = '';
+        document.getElementById('erroSenhaEspecial').classList.add('d-none');
+        
+        const modal = new bootstrap.Modal(document.getElementById('modalSenhaEspecial'));
+        modal.show();
+        
+        setTimeout(() => {
+            document.getElementById('senhaEspecial').focus();
+        }, 500);
+    }
+    
+    function validarSenhaEspecial() {
+        const senha = document.getElementById('senhaEspecial').value;
+        
+        if (!senha) {
+            mostrarErroEspecial('Digite a senha de acesso');
+            return;
+        }
+        
+        // Aqui você implementaria a validação da senha especial
+        // Por enquanto, vamos simular uma validação simples
+        if (senha === 'admin123') {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalSenhaEspecial'));
+            modal.hide();
+            
+            if (tipoAcesso === 'qualidade') {
+                window.location.href = '/qualidade/avaliacao/{{ apontamento.id }}/';
+            } else if (tipoAcesso === 'manutencao') {
+                window.location.href = '/manutencao/parada/{{ apontamento.id }}/';
+            }
+        } else {
+            mostrarErroEspecial('Senha incorreta');
+        }
+    }
+    
+    function mostrarErroEspecial(mensagem) {
+        document.getElementById('mensagemErroEspecial').textContent = mensagem;
+        document.getElementById('erroSenhaEspecial').classList.remove('d-none');
+    }
+    
+    // Inicializar quando a página carregar
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar cronômetro
+        atualizarCronometro();
+        setInterval(atualizarCronometro, 1000);
+        
+        // Eventos de teclado
+        document.getElementById('senhaEspecial').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                validarSenhaEspecial();
+            }
+        });
+        
+        // Aviso antes de sair da página
+        window.addEventListener('beforeunload', function(e) {
+            e.preventDefault();
+            e.returnValue = '';
+            return 'Há uma soldagem em andamento. Tem certeza que deseja sair?';
+        });
+    });
+</script>
+{% endblock %}

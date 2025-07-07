@@ -1,0 +1,355 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciar Usuários - Sistema OEE{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card card-custom">
+                <div class="card-header-custom d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-users"></i>
+                        Gerenciar Usuários
+                    </h3>
+                    <div>
+                        <a href="{% url 'core:admin' %}" class="btn btn-light me-2">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                        <button type="button" class="btn btn-success" onclick="novoUsuario()">
+                            <i class="fas fa-plus"></i> Novo Usuário
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Nome Completo</th>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Tipo</th>
+                                    <th>Status</th>
+                                    <th>Último Login</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for usuario in usuarios %}
+                                    <tr>
+                                        <td>{{ usuario.nome_completo }}</td>
+                                        <td>{{ usuario.username }}</td>
+                                        <td>{{ usuario.email }}</td>
+                                        <td>
+                                            <span class="badge bg-{% if usuario.tipo_usuario == 'admin' %}danger{% elif usuario.tipo_usuario == 'analista' %}info{% elif usuario.tipo_usuario == 'qualidade' %}success{% elif usuario.tipo_usuario == 'manutencao' %}warning{% else %}secondary{% endif %}">
+                                                {{ usuario.get_tipo_usuario_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if usuario.ativo %}
+                                                <span class="badge bg-success">Ativo</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Inativo</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if usuario.ultimo_login %}
+                                                {{ usuario.ultimo_login|date:"d/m/Y H:i" }}
+                                            {% else %}
+                                                <span class="text-muted">Nunca</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-primary" 
+                                                    onclick="editarUsuario({{ usuario.id }})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            {% if usuario.username != 'admin' %}
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-danger" 
+                                                        onclick="excluirUsuario({{ usuario.id }}, '{{ usuario.nome_completo }}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">
+                                            Nenhum usuário cadastrado
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Usuário -->
+<div class="modal fade" id="modalUsuario" tabindex="-1" aria-labelledby="modalUsuarioLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalUsuarioLabel">
+                    <i class="fas fa-user"></i>
+                    <span id="tituloModal">Novo Usuário</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formUsuario">
+                    <input type="hidden" id="usuarioId" name="id">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nomeCompleto" class="form-label">Nome Completo*</label>
+                            <input type="text" class="form-control" id="nomeCompleto" name="nome_completo" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">Username*</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email*</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="tipoUsuario" class="form-label">Tipo de Usuário*</label>
+                            <select class="form-select" id="tipoUsuario" name="tipo_usuario" required>
+                                <option value="">Selecione...</option>
+                                {% for value, label in tipos_usuario %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">Senha</label>
+                            <input type="password" class="form-control" id="password" name="password">
+                            <small class="text-muted">Deixe em branco para manter a senha atual (apenas edição)</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="confirmPassword" class="form-label">Confirmar Senha</label>
+                            <input type="password" class="form-control" id="confirmPassword" name="confirm_password">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="ativo" name="ativo" checked>
+                                <label class="form-check-label" for="ativo">
+                                    Usuário Ativo
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="salvarUsuario()">
+                    <i class="fas fa-save"></i> Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Dados dos usuários para edição
+    const usuariosData = {
+        {% for usuario in usuarios %}
+        {{ usuario.id }}: {
+            'id': {{ usuario.id }},
+            'nome_completo': '{{ usuario.nome_completo|escapejs }}',
+            'username': '{{ usuario.username|escapejs }}',
+            'email': '{{ usuario.email|escapejs }}',
+            'tipo_usuario': '{{ usuario.tipo_usuario }}',
+            'ativo': {{ usuario.ativo|yesno:"true,false" }}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+    
+    function novoUsuario() {
+        // Limpar formulário
+        document.getElementById('formUsuario').reset();
+        document.getElementById('usuarioId').value = '';
+        document.getElementById('tituloModal').textContent = 'Novo Usuário';
+        document.getElementById('password').required = true;
+        document.getElementById('confirmPassword').required = true;
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('modalUsuario'));
+        modal.show();
+        
+        setTimeout(() => {
+            document.getElementById('nomeCompleto').focus();
+        }, 500);
+    }
+    
+    function editarUsuario(usuarioId) {
+        const usuario = usuariosData[usuarioId];
+        if (!usuario) return;
+        
+        // Preencher formulário
+        document.getElementById('usuarioId').value = usuario.id;
+        document.getElementById('nomeCompleto').value = usuario.nome_completo;
+        document.getElementById('username').value = usuario.username;
+        document.getElementById('email').value = usuario.email;
+        document.getElementById('tipoUsuario').value = usuario.tipo_usuario;
+        document.getElementById('ativo').checked = usuario.ativo;
+        
+        // Limpar senhas
+        document.getElementById('password').value = '';
+        document.getElementById('confirmPassword').value = '';
+        document.getElementById('password').required = false;
+        document.getElementById('confirmPassword').required = false;
+        
+        document.getElementById('tituloModal').textContent = 'Editar Usuário';
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('modalUsuario'));
+        modal.show();
+    }
+    
+    function salvarUsuario() {
+        const form = document.getElementById('formUsuario');
+        
+        // Validações
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const usuarioId = document.getElementById('usuarioId').value;
+        
+        // Validar senhas (obrigatório para novo usuário)
+        if (!usuarioId && !password) {
+            showAlert('Senha é obrigatória para novo usuário', 'warning');
+            return;
+        }
+        
+        if (password && password !== confirmPassword) {
+            showAlert('Senhas não conferem', 'warning');
+            return;
+        }
+        
+        if (password && password.length < 6) {
+            showAlert('Senha deve ter pelo menos 6 caracteres', 'warning');
+            return;
+        }
+        
+        toggleLoading(true);
+        
+        // Preparar dados
+        const formData = new FormData(form);
+        const dados = {};
+        
+        for (let [key, value] of formData.entries()) {
+            if (key === 'ativo') {
+                dados[key] = true;
+            } else {
+                dados[key] = value;
+            }
+        }
+        
+        // Se checkbox não foi marcado, ativo = false
+        if (!formData.has('ativo')) {
+            dados['ativo'] = false;
+        }
+        
+        // Fazer requisição
+        fetch('{% url "core:api_salvar_usuario" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(dados)
+        })
+        .then(response => response.json())
+        .then(data => {
+            toggleLoading(false);
+            
+            if (data.success) {
+                showAlert(data.message, 'success');
+                
+                // Fechar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalUsuario'));
+                modal.hide();
+                
+                // Recarregar página após 1 segundo
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                showAlert(data.message || 'Erro ao salvar usuário', 'error');
+            }
+        })
+        .catch(error => {
+            toggleLoading(false);
+            console.error('Erro:', error);
+            showAlert('Erro de conexão', 'error');
+        });
+    }
+    
+    function excluirUsuario(usuarioId, nomeUsuario) {
+        if (!confirm(`Tem certeza que deseja excluir o usuário "${nomeUsuario}"?\n\nEsta ação não pode ser desfeita.`)) {
+            return;
+        }
+        
+        toggleLoading(true);
+        
+        fetch('{% url "core:api_excluir_item" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                'modelo': 'usuario',
+                'id': usuarioId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            toggleLoading(false);
+            
+            if (data.success) {
+                showAlert('Usuário excluído com sucesso', 'success');
+                
+                // Recarregar página após 1 segundo
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                showAlert(data.message || 'Erro ao excluir usuário', 'error');
+            }
+        })
+        .catch(error => {
+            toggleLoading(false);
+            console.error('Erro:', error);
+            showAlert('Erro de conexão', 'error');
+        });
+    }
+</script>
+{% endblock %}

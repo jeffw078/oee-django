@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+
+{% block title %}Painel Administrativo - Sistema OEE{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Saudação Admin -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-custom">
+                <div class="card-header-custom">
+                    <h2 class="mb-0">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Painel Administrativo
+                    </h2>
+                    <p class="mb-0 mt-2">Bem-vindo, {{ user.nome_completo }}!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards de Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Usuários</h5>
+                            <h2>{{ estatisticas.total_usuarios }}</h2>
+                        </div>
+                        <div>
+                            <i class="fas fa-users fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Soldadores</h5>
+                            <h2>{{ estatisticas.total_soldadores }}</h2>
+                        </div>
+                        <div>
+                            <i class="fas fa-hard-hat fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Apontamentos</h5>
+                            <h2>{{ estatisticas.total_apontamentos }}</h2>
+                        </div>
+                        <div>
+                            <i class="fas fa-clipboard-list fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Sistema</h5>
+                            <h2><i class="fas fa-check-circle"></i></h2>
+                            <small>Online</small>
+                        </div>
+                        <div>
+                            <i class="fas fa-server fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu de Administração -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card card-custom">
+                <div class="card-header-custom">
+                    <h4 class="mb-0">
+                        <i class="fas fa-cogs"></i>
+                        Gerenciamento do Sistema
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- Usuários -->
+                        <div class="col-md-6">
+                            <a href="{% url 'core:usuarios' %}" class="card h-100 text-decoration-none border-primary">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                                    <h5 class="card-title">Usuários</h5>
+                                    <p class="card-text">Gerenciar usuários do sistema</p>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <!-- Soldadores -->
+                        <div class="col-md-6">
+                            <a href="{% url 'core:soldadores' %}" class="card h-100 text-decoration-none border-success">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-hard-hat fa-3x text-success mb-3"></i>
+                                    <h5 class="card-title">Soldadores</h5>
+                                    <p class="card-text">Cadastrar e gerenciar soldadores</p>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <!-- Componentes -->
+                        <div class="col-md-6">
+                            <a href="{% url 'core:componentes' %}" class="card h-100 text-decoration-none border-info">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-puzzle-piece fa-3x text-info mb-3"></i>
+                                    <h5 class="card-title">Componentes</h5>
+                                    <p class="card-text">Gerenciar componentes de soldagem</p>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <!-- Módulos -->
+                        <div class="col-md-6">
+                            <a href="{% url 'core:modulos' %}" class="card h-100 text-decoration-none border-warning">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-cube fa-3x text-warning mb-3"></i>
+                                    <h5 class="card-title">Módulos</h5>
+                                    <p class="card-text">Configurar módulos de produção</p>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <!-- Tipos de Parada -->
+                        <div class="col-md-6">
+                            <a href="{% url 'core:tipos_parada' %}" class="card h-100 text-decoration-none border-danger">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-pause-circle fa-3x text-danger mb-3"></i>
+                                    <h5 class="card-title">Tipos de Parada</h5>
+                                    <p class="card-text">Configurar motivos de parada</p>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <!-- Apontamentos -->
+                        <div class="col-md-6">
+                            <a href="{% url 'core:apontamentos' %}" class="card h-100 text-decoration-none border-secondary">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-edit fa-3x text-secondary mb-3"></i>
+                                    <h5 class="card-title">Apontamentos</h5>
+                                    <p class="card-text">Editar apontamentos registrados</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Logs de Auditoria -->
+        <div class="col-lg-4">
+            <div class="card card-custom">
+                <div class="card-header-custom">
+                    <h4 class="mb-0">
+                        <i class="fas fa-history"></i>
+                        Atividades Recentes
+                    </h4>
+                </div>
+                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                    {% if logs_recentes %}
+                        {% for log in logs_recentes %}
+                            <div class="d-flex mb-3">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-circle text-primary" style="font-size: 0.5rem;"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-2">
+                                    <div class="fw-bold">{{ log.acao }}</div>
+                                    <small class="text-muted">
+                                        {{ log.usuario.nome_completo|default:"Sistema" }} - 
+                                        {{ log.timestamp|date:"d/m H:i" }}
+                                    </small>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center">Nenhuma atividade recente</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acesso Rápido aos Relatórios -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card card-custom">
+                <div class="card-header-custom">
+                    <h4 class="mb-0">
+                        <i class="fas fa-chart-line"></i>
+                        Relatórios
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <a href="{% url 'relatorios:dashboard' %}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-tachometer-alt mb-2"></i><br>
+                                Dashboard OEE
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'relatorios:oee' %}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-chart-bar mb-2"></i><br>
+                                Relatório OEE
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'relatorios:pontos_melhoria' %}" class="btn btn-outline-warning w-100">
+                                <i class="fas fa-lightbulb mb-2"></i><br>
+                                Pontos de Melhoria
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'relatorios:paradas' %}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-pause mb-2"></i><br>
+                                Análise de Paradas
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .opacity-50 {
+        opacity: 0.5;
+    }
+    
+    .card:hover {
+        transform: translateY(-2px);
+        transition: transform 0.2s ease-in-out;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+    
+    .text-decoration-none:hover {
+        text-decoration: none !important;
+    }
+</style>
+{% endblock %}

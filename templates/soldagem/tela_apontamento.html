@@ -1,0 +1,542 @@
+{% extends 'base.html' %}
+
+{% block title %}Apontamento - {{ soldador.usuario.nome_completo }}{% endblock %}
+
+{% block content %}
+<!-- Saudação e Relógio Grande -->
+<div class="saudacao-usuario">
+    <h2 class="mb-3">
+        <i class="fas fa-sun text-warning"></i>
+        {{ saudacao }}, {{ soldador.usuario.nome_completo }}!
+    </h2>
+    <div class="relogio-grande" id="relogioGrande">--:--:--</div>
+    <p class="text-muted mb-0">
+        <i class="fas fa-calendar-day"></i>
+        {{ "now"|date:"d/m/Y" }}
+    </p>
+</div>
+
+<!-- Status do Processo Atual -->
+{% if apontamento_ativo %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-custom border-warning">
+                <div class="card-header-custom" style="background: linear-gradient(135deg, #ffc107, #e0a800);">
+                    <h4 class="mb-0">
+                        <i class="fas fa-tools"></i>
+                        Soldagem em Andamento
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Pedido:</strong> {{ apontamento_ativo.pedido.numero }}</p>
+                            <p><strong>Poste/Tubo:</strong> {{ apontamento_ativo.numero_poste_tubo }}</p>
+                            <p><strong>Módulo:</strong> {{ apontamento_ativo.modulo.nome }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Componente:</strong> {{ apontamento_ativo.componente.nome }}</p>
+                            <p><strong>Início:</strong> {{ apontamento_ativo.inicio_processo|date:"H:i:s" }}</p>
+                            <p><strong>Tempo Decorrido:</strong> <span id="tempoDecorrido">--:--:--</span></p>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'soldagem:processo_soldagem' apontamento_ativo.id %}" class="btn btn-warning btn-lg">
+                            <i class="fas fa-play-circle"></i>
+                            Continuar Soldagem
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Status de Parada Ativa -->
+{% if parada_ativa %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-custom border-danger">
+                <div class="card-header-custom" style="background: linear-gradient(135deg, #dc3545, #b02a31);">
+                    <h4 class="mb-0">
+                        <i class="fas fa-pause-circle"></i>
+                        Pausa em Andamento
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Motivo:</strong> {{ parada_ativa.tipo_parada.nome }}</p>
+                            <p><strong>Início da Pausa:</strong> {{ parada_ativa.inicio|date:"H:i:s" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Tempo de Pausa:</strong> <span id="tempoParada">--:--:--</span></p>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <button class="btn btn-success btn-lg" onclick="retomarSoldagem()">
+                            <i class="fas fa-play"></i>
+                            Retomar Soldagem
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Botões Principais -->
+<div class="row">
+    <div class="col-12">
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h3 class="mb-0">
+                    <i class="fas fa-cogs"></i>
+                    Selecione o Módulo
+                </h3>
+            </div>
+            <div class="card-body p-4">
+                <!-- Módulos -->
+                <div class="row g-3 mb-4">
+                    {% for modulo in modulos %}
+                        <div class="col-6 col-lg-3">
+                            <button type="button" 
+                                    class="btn btn-modulo w-100 h-100"
+                                    style="min-height: 100px;"
+                                    onclick="selecionarModulo({{ modulo.id }}, '{{ modulo.nome }}')">
+                                <i class="fas fa-cube fa-2x mb-2"></i>
+                                <br>
+                                {{ modulo.nome }}
+                            </button>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Botões de Ação -->
+                <hr>
+                <div class="row g-3">
+                    <div class="col-6 col-lg-3">
+                        <button type="button" 
+                                class="btn btn-qualidade w-100 h-100"
+                                style="min-height: 80px;"
+                                onclick="acessarQualidade()">
+                            <i class="fas fa-check-circle fa-2x mb-2"></i>
+                            <br>
+                            QUALIDADE
+                        </button>
+                    </div>
+                    
+                    <div class="col-6 col-lg-3">
+                        <button type="button" 
+                                class="btn btn-parada w-100 h-100"
+                                style="min-height: 80px;"
+                                onclick="iniciarParada()">
+                            <i class="fas fa-pause fa-2x mb-2"></i>
+                            <br>
+                            PARADAS
+                        </button>
+                    </div>
+                    
+                    <div class="col-6 col-lg-3">
+                        <button type="button" 
+                                class="btn btn-parada w-100 h-100"
+                                style="min-height: 80px; background: #6f42c1;"
+                                onclick="acessarManutencao()">
+                            <i class="fas fa-wrench fa-2x mb-2"></i>
+                            <br>
+                            MANUTENÇÃO
+                        </button>
+                    </div>
+                    
+                    <div class="col-6 col-lg-3">
+                        <button type="button" 
+                                class="btn btn-parada w-100 h-100"
+                                style="min-height: 80px; background: #fd7e14;"
+                                onclick="finalizarTurno()">
+                            <i class="fas fa-sign-out-alt fa-2x mb-2"></i>
+                            <br>
+                            FINALIZAR TURNO
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Dados do Pedido -->
+<div class="modal fade" id="modalPedido" tabindex="-1" aria-labelledby="modalPedidoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalPedidoLabel">
+                    <i class="fas fa-clipboard-list"></i>
+                    Dados do Pedido
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formPedido">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-cube fa-4x text-primary"></i>
+                        <h4 class="mt-2" id="nomeModuloSelecionado">Módulo</h4>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="numeroPedido" class="form-label">Número do Pedido:</label>
+                        <input type="text" 
+                               class="form-control form-control-lg" 
+                               id="numeroPedido" 
+                               placeholder="Ex: 5454"
+                               required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="numeroPosteTubo" class="form-label">Número do Poste/Tubo:</label>
+                        <input type="text" 
+                               class="form-control form-control-lg" 
+                               id="numeroPosteTubo" 
+                               placeholder="Ex: 1"
+                               required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="confirmarPedido()">
+                    <i class="fas fa-arrow-right"></i>
+                    Continuar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Senha Especial -->
+<div class="modal fade" id="modalSenhaEspecial" tabindex="-1" aria-labelledby="modalSenhaEspecialLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalSenhaEspecialLabel">
+                    <i class="fas fa-key"></i>
+                    Acesso Restrito
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-lock fa-4x text-warning"></i>
+                    <h4 class="mt-2" id="tipoAcessoEspecial">Área Restrita</h4>
+                    <p class="text-muted">Digite a senha de acesso especial</p>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="senhaEspecial" class="form-label">Senha:</label>
+                    <input type="password" 
+                           class="form-control form-control-lg text-center" 
+                           id="senhaEspecial" 
+                           placeholder="Digite a senha"
+                           required>
+                </div>
+                
+                <div id="erroSenhaEspecial" class="alert alert-danger d-none">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span id="mensagemErroEspecial"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="validarSenhaEspecial()">
+                    <i class="fas fa-unlock"></i>
+                    Acessar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Variáveis globais
+    let moduloSelecionado = null;
+    let tipoAcesso = null;
+    
+    // Atualizar relógio grande - função universal
+    function atualizarRelogioGrande() {
+        const agora = new Date();
+        const tempo = agora.toLocaleTimeString('pt-BR');
+        document.getElementById('relogioGrande').textContent = tempo;
+    }
+    
+    // Função para atualizar tempo decorrido - com template tags diretas
+    (function() {
+        {% if apontamento_ativo %}
+            window.atualizarTempoDecorrido = function() {
+                const inicio = new Date('{{ apontamento_ativo.inicio_processo|date:"c" }}');
+                const agora = new Date();
+                const diff = agora - inicio;
+                
+                const horas = Math.floor(diff / 3600000);
+                const minutos = Math.floor((diff % 3600000) / 60000);
+                const segundos = Math.floor((diff % 60000) / 1000);
+                
+                const tempo = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+                const elemento = document.getElementById('tempoDecorrido');
+                if (elemento) {
+                    elemento.textContent = tempo;
+                }
+            };
+        {% else %}
+            window.atualizarTempoDecorrido = function() {
+                // Não há apontamento ativo
+            };
+        {% endif %}
+    })();
+    
+    // Função para atualizar tempo de parada - com template tags diretas
+    (function() {
+        {% if parada_ativa %}
+            window.atualizarTempoParada = function() {
+                const inicio = new Date('{{ parada_ativa.inicio|date:"c" }}');
+                const agora = new Date();
+                const diff = agora - inicio;
+                
+                const horas = Math.floor(diff / 3600000);
+                const minutos = Math.floor((diff % 3600000) / 60000);
+                const segundos = Math.floor((diff % 60000) / 1000);
+                
+                const tempo = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+                const elemento = document.getElementById('tempoParada');
+                if (elemento) {
+                    elemento.textContent = tempo;
+                }
+            };
+        {% else %}
+            window.atualizarTempoParada = function() {
+                // Não há parada ativa
+            };
+        {% endif %}
+    })();
+    
+    // Função selecionarModulo com verificações Django diretas
+    function selecionarModulo(moduloId, nomeModulo) {
+        {% if apontamento_ativo %}
+            showAlert('Finalize a soldagem atual antes de iniciar uma nova.', 'warning');
+            return;
+        {% endif %}
+        
+        {% if parada_ativa %}
+            showAlert('Finalize a parada atual antes de iniciar uma soldagem.', 'warning');
+            return;
+        {% endif %}
+        
+        moduloSelecionado = moduloId;
+        document.getElementById('nomeModuloSelecionado').textContent = nomeModulo;
+        
+        // Mostrar modal para dados do pedido
+        const modal = new bootstrap.Modal(document.getElementById('modalPedido'));
+        modal.show();
+        
+        setTimeout(() => {
+            document.getElementById('numeroPedido').focus();
+        }, 500);
+    }
+    
+    function confirmarPedido() {
+        const numeroPedido = document.getElementById('numeroPedido').value;
+        const numeroPosteTubo = document.getElementById('numeroPosteTubo').value;
+        
+        if (!numeroPedido || !numeroPosteTubo) {
+            showAlert('Preencha todos os campos obrigatórios.', 'warning');
+            return;
+        }
+        
+        // Enviar dados via form
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/soldagem/modulo/${moduloSelecionado}/`;
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = getCookie('csrftoken');
+        form.appendChild(csrfInput);
+        
+        const pedidoInput = document.createElement('input');
+        pedidoInput.type = 'hidden';
+        pedidoInput.name = 'numero_pedido';
+        pedidoInput.value = numeroPedido;
+        form.appendChild(pedidoInput);
+        
+        const posteInput = document.createElement('input');
+        posteInput.type = 'hidden';
+        posteInput.name = 'numero_poste_tubo';
+        posteInput.value = numeroPosteTubo;
+        form.appendChild(posteInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+    
+    function acessarQualidade() {
+        tipoAcesso = 'qualidade';
+        document.getElementById('tipoAcessoEspecial').textContent = 'Acesso à Qualidade';
+        mostrarModalSenhaEspecial();
+    }
+    
+    function acessarManutencao() {
+        tipoAcesso = 'manutencao';
+        document.getElementById('tipoAcessoEspecial').textContent = 'Acesso à Manutenção';
+        mostrarModalSenhaEspecial();
+    }
+    
+    function iniciarParada() {
+        window.location.href = '/soldagem/paradas/';
+    }
+    
+    function mostrarModalSenhaEspecial() {
+        document.getElementById('senhaEspecial').value = '';
+        document.getElementById('erroSenhaEspecial').classList.add('d-none');
+        
+        const modal = new bootstrap.Modal(document.getElementById('modalSenhaEspecial'));
+        modal.show();
+        
+        setTimeout(() => {
+            document.getElementById('senhaEspecial').focus();
+        }, 500);
+    }
+    
+    function validarSenhaEspecial() {
+        const senha = document.getElementById('senhaEspecial').value;
+        
+        if (!senha) {
+            mostrarErroEspecial('Digite a senha de acesso');
+            return;
+        }
+        
+        // Validação da senha especial
+        if (senha === 'admin123') {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalSenhaEspecial'));
+            modal.hide();
+            
+            if (tipoAcesso === 'qualidade') {
+                window.location.href = '/qualidade/';
+            } else if (tipoAcesso === 'manutencao') {
+                window.location.href = '/manutencao/';
+            }
+        } else {
+            mostrarErroEspecial('Senha incorreta');
+        }
+    }
+    
+    function mostrarErroEspecial(mensagem) {
+        document.getElementById('mensagemErroEspecial').textContent = mensagem;
+        document.getElementById('erroSenhaEspecial').classList.remove('d-none');
+    }
+    
+    // Função finalizarTurno com verificação Django direta
+    function finalizarTurno() {
+        if (confirm('Tem certeza que deseja finalizar o turno? Você será desconectado do sistema.')) {
+            {% if apontamento_ativo %}
+                if (!confirm('Há uma soldagem em andamento. Deseja realmente finalizar o turno?')) {
+                    return;
+                }
+            {% endif %}
+            
+            fetch('{% url "soldagem:finalizar_turno" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Turno finalizado com sucesso!', 'success');
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url;
+                    }, 1500);
+                } else {
+                    showAlert(data.message || 'Erro ao finalizar turno', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                showAlert('Erro de conexão', 'error');
+            });
+        }
+    }
+    
+    function retomarSoldagem() {
+        fetch('/soldagem/retomar_parada/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Parada finalizada!', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                showAlert(data.message || 'Erro ao retomar soldagem', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            showAlert('Erro de conexão', 'error');
+        });
+    }
+    
+    // Inicialização condicionada por template tags
+    (function() {
+        document.addEventListener('DOMContentLoaded', function() {
+            // Atualizar relógio grande
+            atualizarRelogioGrande();
+            setInterval(atualizarRelogioGrande, 1000);
+            
+            // Configurar atualizações condicionais
+            {% if apontamento_ativo %}
+                atualizarTempoDecorrido();
+                setInterval(atualizarTempoDecorrido, 1000);
+            {% endif %}
+            
+            {% if parada_ativa %}
+                atualizarTempoParada();
+                setInterval(atualizarTempoParada, 1000);
+            {% endif %}
+            
+            // Event listeners
+            const numeroPosteTubo = document.getElementById('numeroPosteTubo');
+            if (numeroPosteTubo) {
+                numeroPosteTubo.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        confirmarPedido();
+                    }
+                });
+            }
+            
+            const senhaEspecial = document.getElementById('senhaEspecial');
+            if (senhaEspecial) {
+                senhaEspecial.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        validarSenhaEspecial();
+                    }
+                });
+            }
+        });
+    })();
+</script>
+{% endblock %}
