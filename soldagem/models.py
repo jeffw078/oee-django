@@ -16,13 +16,13 @@ class Modulo(models.Model):
         
     def __str__(self):
         return self.nome
-
 class Componente(models.Model):
     nome = models.CharField(max_length=100)
     descricao = models.TextField(blank=True)
-    tempo_padrao = models.DecimalField(max_digits=6, decimal_places=2, help_text="Tempo em minutos")
+    modulo = models.ForeignKey(Modulo, on_delete=models.CASCADE, related_name='componentes')  # LINHA ADICIONADA
+    tempo_padrao = models.DecimalField(max_digits=6, decimal_places=2, help_text="Em minutos")
     considera_diametro = models.BooleanField(default=False)
-    formula_calculo = models.TextField(blank=True, help_text="Fórmula para calcular tempo baseado no diâmetro")
+    formula_calculo = models.TextField(blank=True, help_text="Fórmula para calcular tempo com diâmetro")
     ativo = models.BooleanField(default=True)
     data_criacao = models.DateTimeField(auto_now_add=True)
     
@@ -31,7 +31,26 @@ class Componente(models.Model):
         ordering = ['nome']
         
     def __str__(self):
-        return self.nome
+        return f"{self.nome} ({self.modulo.nome})"
+    
+    def calcular_tempo_padrao(self, diametro=None):
+        """Calcula tempo padrão baseado no diâmetro se necessário"""
+        if self.considera_diametro and diametro:
+            try:
+                # Avaliar fórmula com diâmetro
+                if self.formula_calculo:
+                    # Substituir variáveis na fórmula
+                    formula = self.formula_calculo.replace('diametro', str(diametro))
+                    # Avaliar de forma segura (apenas operações matemáticas básicas)
+                    import re
+                    if re.match(r'^[0-9+\-*/.() ]+$', formula):
+                        return Decimal(str(eval(formula)))
+                else:
+                    # Fórmula padrão: tempo_padrao * (diametro / 100)
+                    return self.tempo_padrao * (Decimal(str(diametro)) / 100)
+            except:
+                pass
+        
     
     def calcular_tempo_padrao(self, diametro=None):
         """Calcula o tempo padrão baseado no diâmetro se necessário"""

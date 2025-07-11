@@ -21,9 +21,10 @@
                             {% for soldador in soldadores %}
                                 <div class="col-6 col-md-4 col-lg-3">
                                     <button type="button" 
-                                            class="btn btn-modulo w-100 h-100 d-flex flex-column align-items-center justify-content-center"
+                                            class="btn btn-modulo w-100 h-100 d-flex flex-column align-items-center justify-content-center soldador-btn"
                                             style="min-height: 120px;"
-                                            onclick="selecionarSoldador({{ soldador.id }}, '{{ soldador.usuario.nome_completo }}')">
+                                            data-soldador-id="{{ soldador.id }}"
+                                            data-soldador-nome="{{ soldador.usuario.nome_completo|escapejs }}">
                                         <i class="fas fa-user fa-2x mb-2"></i>
                                         <span class="text-wrap">{{ soldador.usuario.nome_completo }}</span>
                                     </button>
@@ -76,6 +77,14 @@
                         <i class="fas fa-exclamation-circle"></i>
                         <span id="mensagemErro"></span>
                     </div>
+                    
+                    <!-- Loading indicator -->
+                    <div id="loadingLogin" class="text-center d-none">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                        <p class="mt-2">Realizando login...</p>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -83,7 +92,7 @@
                     <i class="fas fa-times"></i>
                     Cancelar
                 </button>
-                <button type="button" class="btn btn-primary" onclick="realizarLogin()">
+                <button type="button" class="btn btn-primary" id="btnLogin">
                     <i class="fas fa-sign-in-alt"></i>
                     Entrar
                 </button>
@@ -91,30 +100,133 @@
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
-<script>
-    let soldadorSelecionado = null;
-    
-    function selecionarSoldador(soldadorId, nomeSoldador) {
-        soldadorSelecionado = soldadorId;
-        document.getElementById('nomeSoldadorLogin').textContent = nomeSoldador;
-        document.getElementById('senhaLogin').value = '';
-        document.getElementById('erroLogin').classList.add('d-none');
-        
-        // Mostrar modal
-        const modal = new bootstrap.Modal(document.getElementById('modalLogin'));
-        modal.show();
-        
-        // Focar no campo de senha
-        setTimeout(() => {
-            document.getElementById('senhaLogin').focus();
-        }, 500);
+<style>
+    .soldador-btn {
+        transition: all 0.3s ease;
     }
     
+    .soldador-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
+    }
+    
+    .card-custom {
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    
+    .card-header-custom {
+        background: linear-gradient(135deg, var(--primary-color), #b02a31);
+        color: white;
+        padding: 2rem 1.5rem;
+        border: none;
+    }
+    
+    @media (max-width: 768px) {
+        .soldador-btn {
+            min-height: 100px !important;
+            font-size: 0.9rem;
+        }
+    }
+</style>
+
+<script>
+    // Variáveis globais
+    let soldadorSelecionado = null;
+    
+    // Função para obter cookie CSRF
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Função para mostrar alertas
+    function showAlert(message, type) {
+        const alertClass = type === 'error' ? 'danger' : type;
+        const iconClass = type === 'success' ? 'check-circle' : 
+                         type === 'error' ? 'exclamation-circle' : 'info-circle';
+        
+        const alertHtml = `
+            <div class="alert alert-${alertClass} alert-dismissible fade show position-fixed" 
+                 style="top: 80px; right: 20px; z-index: 9999; min-width: 300px;" role="alert">
+                <i class="fas fa-${iconClass}"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', alertHtml);
+        
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            if (alerts.length > 0) {
+                alerts[alerts.length - 1].remove();
+            }
+        }, 5000);
+    }
+    
+    // Função para controlar loading
+    function toggleLoading(show) {
+        const loadingElement = document.getElementById('loadingLogin');
+        const btnLogin = document.getElementById('btnLogin');
+        const senhaInput = document.getElementById('senhaLogin');
+        
+        if (show) {
+            if (loadingElement) loadingElement.classList.remove('d-none');
+            if (btnLogin) btnLogin.disabled = true;
+            if (senhaInput) senhaInput.disabled = true;
+        } else {
+            if (loadingElement) loadingElement.classList.add('d-none');
+            if (btnLogin) btnLogin.disabled = false;
+            if (senhaInput) senhaInput.disabled = false;
+        }
+    }
+    
+    // Função para selecionar soldador
+    function selecionarSoldador(soldadorId, nomeSoldador) {
+        soldadorSelecionado = soldadorId;
+        const nomeElement = document.getElementById('nomeSoldadorLogin');
+        const senhaElement = document.getElementById('senhaLogin');
+        const erroElement = document.getElementById('erroLogin');
+        
+        if (nomeElement) nomeElement.textContent = nomeSoldador;
+        if (senhaElement) senhaElement.value = '';
+        if (erroElement) erroElement.classList.add('d-none');
+        
+        // Resetar loading
+        toggleLoading(false);
+        
+        // Mostrar modal
+        const modalElement = document.getElementById('modalLogin');
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+            
+            setTimeout(function() {
+                if (senhaElement) senhaElement.focus();
+            }, 500);
+        }
+    }
+    
+    // Função para realizar login
     function realizarLogin() {
-        const senha = document.getElementById('senhaLogin').value;
+        const senhaElement = document.getElementById('senhaLogin');
+        if (!senhaElement) return;
+        
+        const senha = senhaElement.value;
         
         if (!senha) {
             mostrarErro('Digite a senha de acesso');
@@ -134,17 +246,7 @@
             senha: senha
         };
         
-        // Verificar se está online
-        if (window.offlineManager && !window.offlineManager.isOnline) {
-            // Salvar para sincronização posterior
-            const id = window.offlineManager.salvarDadoOffline('login', dados);
-            
-            showAlert('Login salvo para quando a conexão for restabelecida.', 'warning');
-            toggleLoading(false);
-            return;
-        }
-        
-        // Fazer login online
+        // Fazer login
         fetch('{% url "soldagem:login_soldador" %}', {
             method: 'POST',
             headers: {
@@ -153,49 +255,102 @@
             },
             body: JSON.stringify(dados)
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
             toggleLoading(false);
             
             if (data.success) {
                 showAlert('Login realizado com sucesso!', 'success');
                 
                 // Fechar modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('modalLogin'));
-                modal.hide();
+                const modalElement = document.getElementById('modalLogin');
+                if (modalElement) {
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) modal.hide();
+                }
                 
                 // Redirecionar
-                setTimeout(() => {
-                    window.location.href = data.redirect_url;
+                setTimeout(function() {
+                    window.location.href = data.redirect_url || '/soldagem/apontamento/';
                 }, 1000);
             } else {
                 mostrarErro(data.message || 'Erro no login');
             }
         })
-        .catch(error => {
+        .catch(function(error) {
             toggleLoading(false);
             console.error('Erro:', error);
             mostrarErro('Erro de conexão. Tente novamente.');
         });
     }
     
+    // Função para mostrar erro
     function mostrarErro(mensagem) {
-        document.getElementById('mensagemErro').textContent = mensagem;
-        document.getElementById('erroLogin').classList.remove('d-none');
+        const mensagemElement = document.getElementById('mensagemErro');
+        const erroElement = document.getElementById('erroLogin');
+        
+        if (mensagemElement) {
+            mensagemElement.textContent = mensagem;
+        }
+        if (erroElement) {
+            erroElement.classList.remove('d-none');
+        }
     }
     
-    // Permitir login com Enter
+    // Inicialização
     document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('senhaLogin').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                realizarLogin();
-            }
+        console.log('Sistema de seleção de soldador inicializado');
+        
+        // Event listeners para botões de soldador
+        const soldadorBtns = document.querySelectorAll('.soldador-btn');
+        soldadorBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const soldadorId = this.getAttribute('data-soldador-id');
+                const soldadorNome = this.getAttribute('data-soldador-nome');
+                selecionarSoldador(soldadorId, soldadorNome);
+            });
         });
         
-        // Limpar erro quando começar a digitar
-        document.getElementById('senhaLogin').addEventListener('input', function() {
-            document.getElementById('erroLogin').classList.add('d-none');
-        });
+        // Event listener para botão de login
+        const btnLogin = document.getElementById('btnLogin');
+        if (btnLogin) {
+            btnLogin.addEventListener('click', realizarLogin);
+        }
+        
+        // Event listener para Enter no campo senha
+        const senhaElement = document.getElementById('senhaLogin');
+        if (senhaElement) {
+            senhaElement.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    realizarLogin();
+                }
+            });
+            
+            // Limpar erro quando começar a digitar
+            senhaElement.addEventListener('input', function() {
+                const erroElement = document.getElementById('erroLogin');
+                if (erroElement) {
+                    erroElement.classList.add('d-none');
+                }
+            });
+        }
+        
+        // Limpar dados ao fechar modal
+        const modalElement = document.getElementById('modalLogin');
+        if (modalElement) {
+            modalElement.addEventListener('hidden.bs.modal', function() {
+                soldadorSelecionado = null;
+                const senhaElement = document.getElementById('senhaLogin');
+                const erroElement = document.getElementById('erroLogin');
+                
+                if (senhaElement) senhaElement.value = '';
+                if (erroElement) erroElement.classList.add('d-none');
+                
+                toggleLoading(false);
+            });
+        }
     });
 </script>
 {% endblock %}

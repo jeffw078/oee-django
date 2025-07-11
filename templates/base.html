@@ -9,6 +9,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Montserrat -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
@@ -22,10 +24,11 @@
             --info-color: #17a2b8;
             --light-color: #f8f9fa;
             --dark-color: #343a40;
+            --white: #ffffff;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f8f9fa;
             margin: 0;
             padding: 0;
@@ -64,235 +67,191 @@
 
         .sistema-titulo {
             font-size: 1.5rem;
-            font-weight: 600;
+            font-weight: 500;
             margin: 0;
+            font-family: 'Montserrat', sans-serif;
         }
 
         .header-info {
             display: flex;
             align-items: center;
-            gap: 2rem;
+            gap: 1rem;
+            font-family: 'Montserrat', sans-serif;
         }
 
         .status-conexao {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            font-weight: 500;
         }
 
         .status-indicator {
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            background-color: var(--success-color);
-            box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
-            animation: pulse 2s infinite;
+            background-color: #28a745;
+            animation: pulse-green 2s infinite;
+            box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+        }
+
+        @keyframes pulse-green {
+            0% {
+                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+            }
         }
 
         .status-indicator.offline {
-            background-color: var(--danger-color);
-            box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+            background-color: #dc3545;
+            animation: pulse-red 2s infinite;
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
+        @keyframes pulse-red {
+            0% {
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+            }
         }
 
         .relogio-digital {
-            font-family: 'Courier New', monospace;
-            font-size: 1.8rem;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: white;
+            font-family: 'Montserrat', monospace;
         }
 
         .btn-sair {
-            background: rgba(255,255,255,0.2);
-            border: 2px solid white;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             color: white;
             padding: 0.5rem 1rem;
-            border-radius: 8px;
+            border-radius: 25px;
             text-decoration: none;
+            font-weight: 500;
             transition: all 0.3s ease;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
         }
 
         .btn-sair:hover {
-            background: white;
-            color: var(--primary-color);
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
             text-decoration: none;
         }
 
         .main-content {
+            padding: 2rem 1rem;
             max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 1rem;
+            margin: 0 auto;
         }
 
-        .card-custom {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        /* Estilos para alertas */
+        .alert-custom {
+            border-radius: 10px;
             border: none;
-            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
-        .card-header-custom {
-            background: linear-gradient(135deg, var(--primary-color), #b02a31);
-            color: white;
-            padding: 1.5rem;
-            border-bottom: none;
+        /* Loading spinner */
+        .loading-spinner {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            display: none;
+            text-align: center;
         }
 
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .logo-section {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .sistema-titulo {
+                font-size: 1.2rem;
+            }
+            
+            .header-info {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+        }
+
+        /* Estilos para botões */
         .btn-modulo {
             background: var(--primary-color);
             border: none;
             color: white;
-            padding: 1.5rem;
-            margin: 0.5rem;
-            border-radius: 12px;
-            font-size: 1.2rem;
-            font-weight: 600;
+            border-radius: 10px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+            font-weight: 600;
         }
 
         .btn-modulo:hover {
             background: #c82333;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
             color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.3);
         }
 
         .btn-qualidade {
             background: var(--success-color);
             border: none;
             color: white;
-            padding: 1.5rem;
-            margin: 0.5rem;
-            border-radius: 12px;
-            font-size: 1.2rem;
-            font-weight: 600;
+            border-radius: 10px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            font-weight: 600;
         }
 
         .btn-qualidade:hover {
             background: #218838;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
             color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
         }
 
         .btn-parada {
             background: var(--secondary-color);
             border: none;
             color: white;
-            padding: 1.5rem;
-            margin: 0.5rem;
-            border-radius: 12px;
-            font-size: 1.2rem;
-            font-weight: 600;
+            border-radius: 10px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+            font-weight: 600;
         }
 
         .btn-parada:hover {
             background: #5a6268;
+            color: white;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
-            color: white;
-        }
-
-        .saudacao-usuario {
-            text-align: center;
-            margin: 2rem 0;
-            padding: 1.5rem;
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-            border-radius: 12px;
-            border-left: 5px solid var(--primary-color);
-        }
-
-        .relogio-grande {
-            font-family: 'Courier New', monospace;
-            font-size: 3rem;
-            font-weight: bold;
-            color: var(--primary-color);
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-            margin: 1rem 0;
-        }
-
-        .alert-custom {
-            border-radius: 12px;
-            border: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        .loading-spinner {
-            display: none;
-            text-align: center;
-            margin: 2rem 0;
-        }
-
-        .modal-content {
-            border-radius: 15px;
-            border: none;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-
-        .modal-header {
-            background: linear-gradient(135deg, var(--primary-color), #b02a31);
-            color: white;
-            border-top-left-radius: 15px;
-            border-top-right-radius: 15px;
-            border-bottom: none;
-        }
-
-        /* Responsividade para tablets */
-        @media (max-width: 768px) {
-            .header-content {
-                flex-direction: column;
-                gap: 1rem;
-                text-align: center;
-            }
-
-            .header-info {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .sistema-titulo {
-                font-size: 1.2rem;
-            }
-
-            .relogio-digital {
-                font-size: 1.5rem;
-            }
-
-            .relogio-grande {
-                font-size: 2.5rem;
-            }
-
-            .btn-modulo, .btn-qualidade, .btn-parada {
-                width: 100%;
-                margin: 0.5rem 0;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .main-content {
-                padding: 0 0.5rem;
-            }
-
-            .relogio-grande {
-                font-size: 2rem;
-            }
-
-            .btn-modulo, .btn-qualidade, .btn-parada {
-                padding: 1rem;
-                font-size: 1rem;
-            }
+            box-shadow: 0 6px 20px rgba(108, 117, 125, 0.3);
         }
 
         /* Classes para offline */
@@ -345,9 +304,9 @@
                 </div>
                 
                 {% if user.is_authenticated %}
-                    <a href="{% url 'soldagem:finalizar_turno' %}" class="btn-sair" onclick="return confirm('Deseja realmente finalizar o turno?')">
+                    <button onclick="finalizarTurno()" class="btn-sair">
                         <i class="fas fa-sign-out-alt"></i> SAIR
-                    </a>
+                    </button>
                 {% endif %}
             </div>
         </div>
@@ -451,51 +410,53 @@
             }
             
             atualizarStatus() {
-                if (this.isOnline) {
-                    this.statusIndicator.classList.remove('offline');
-                    this.statusTexto.textContent = 'Conectado';
-                    this.offlineIndicator.style.display = 'none';
-                } else {
-                    this.statusIndicator.classList.add('offline');
-                    this.statusTexto.textContent = 'Offline';
-                    this.offlineIndicator.style.display = 'block';
+                if (this.statusIndicator && this.statusTexto) {
+                    if (this.isOnline) {
+                        this.statusIndicator.classList.remove('offline');
+                        this.statusTexto.textContent = 'Conectado';
+                        if (this.offlineIndicator) {
+                            this.offlineIndicator.style.display = 'none';
+                        }
+                    } else {
+                        this.statusIndicator.classList.add('offline');
+                        this.statusTexto.textContent = 'Offline';
+                        if (this.offlineIndicator) {
+                            this.offlineIndicator.style.display = 'block';
+                        }
+                    }
                 }
-            }
-            
-            salvarDadoOffline(tipo, dados) {
-                const item = {
-                    id: Date.now(),
-                    tipo: tipo,
-                    dados: dados,
-                    timestamp: new Date().toISOString()
-                };
-                
-                this.dadosOffline.push(item);
-                localStorage.setItem('dadosOffline', JSON.stringify(this.dadosOffline));
-                this.atualizarContadorPendentes();
-                
-                return item.id;
             }
             
             atualizarContadorPendentes() {
-                const count = this.dadosOffline.length;
-                this.contadorPendentes.textContent = count;
-                
-                if (count > 0) {
-                    this.dadosPendentes.style.display = 'block';
-                } else {
-                    this.dadosPendentes.style.display = 'none';
+                if (this.contadorPendentes && this.dadosPendentes) {
+                    this.contadorPendentes.textContent = this.dadosOffline.length;
+                    if (this.dadosOffline.length > 0) {
+                        this.dadosPendentes.style.display = 'block';
+                    } else {
+                        this.dadosPendentes.style.display = 'none';
+                    }
                 }
             }
             
+            adicionarDadoOffline(dados) {
+                this.dadosOffline.push({
+                    id: Date.now(),
+                    dados: dados,
+                    timestamp: new Date().toISOString()
+                });
+                
+                localStorage.setItem('dadosOffline', JSON.stringify(this.dadosOffline));
+                this.atualizarContadorPendentes();
+            }
+            
             sincronizarDados() {
-                if (this.dadosOffline.length === 0) return;
+                if (!this.isOnline || this.dadosOffline.length === 0) return;
                 
                 fetch('/soldagem/api/sync/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
+                        'X-CSRFToken': this.getCookie('csrftoken')
                     },
                     body: JSON.stringify({
                         dados: this.dadosOffline
@@ -504,113 +465,64 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Remover dados sincronizados com sucesso
-                        this.dadosOffline = this.dadosOffline.filter(item => {
-                            const resultado = data.resultados.find(r => r.id_local === item.id);
-                            return resultado && resultado.status !== 'sucesso';
-                        });
-                        
-                        localStorage.setItem('dadosOffline', JSON.stringify(this.dadosOffline));
+                        this.dadosOffline = [];
+                        localStorage.removeItem('dadosOffline');
                         this.atualizarContadorPendentes();
-                        
-                        if (this.dadosOffline.length === 0) {
-                            showAlert('Todos os dados foram sincronizados com sucesso!', 'success');
-                        }
                     }
                 })
                 .catch(error => {
                     console.error('Erro na sincronização:', error);
                 });
             }
-        }
-        
-        // Função para obter cookie CSRF
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
+            
+            getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
                     }
                 }
+                return cookieValue;
             }
-            return cookieValue;
         }
         
-        // Atualizar relógio
-        function atualizarRelogio() {
+        // Função para atualizar relógio do cabeçalho
+        function atualizarRelogioCabecalho() {
             const agora = new Date();
-            const tempo = agora.toLocaleTimeString('pt-BR');
-            document.getElementById('relogio').textContent = tempo;
-        }
-        
-        // Função para mostrar alertas
-        function showAlert(message, type = 'info') {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-custom alert-dismissible fade show`;
-            alertDiv.innerHTML = `
-                <i class="fas fa-${type === 'error' ? 'exclamation-circle' : type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
+            const horas = agora.getHours().toString().padStart(2, '0');
+            const minutos = agora.getMinutes().toString().padStart(2, '0');
+            const segundos = agora.getSeconds().toString().padStart(2, '0');
             
-            const mainContent = document.querySelector('.main-content');
-            mainContent.insertBefore(alertDiv, mainContent.firstChild);
-            
-            // Auto-remover após 5 segundos
-            setTimeout(() => {
-                alertDiv.remove();
-            }, 5000);
+            const elemento = document.getElementById('relogio');
+            if (elemento) {
+                elemento.textContent = horas + ':' + minutos + ':' + segundos;
+            }
         }
         
-        // Função para mostrar/ocultar loading
-        function toggleLoading(show = true) {
-            const loading = document.getElementById('loadingSpinner');
-            loading.style.display = show ? 'block' : 'none';
+        // Função global para finalizar turno (usada pelo botão SAIR)
+        function finalizarTurno() {
+            // Esta função será sobrescrita nas páginas específicas
+            console.log('Função finalizarTurno não implementada para esta página');
         }
         
-        // Inicializar quando a página carregar
+        // Inicializar sistema
         document.addEventListener('DOMContentLoaded', function() {
             // Inicializar gerenciador offline
-            window.offlineManager = new OfflineManager();
+            const offlineManager = new OfflineManager();
             
-            // Inicializar relógio
-            atualizarRelogio();
-            setInterval(atualizarRelogio, 1000);
+            // Atualizar relógio do cabeçalho
+            atualizarRelogioCabecalho();
+            setInterval(atualizarRelogioCabecalho, 1000);
             
-            // Adicionar eventos para formulários offline
-            document.querySelectorAll('form[data-offline="true"]').forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    if (!window.offlineManager.isOnline) {
-                        e.preventDefault();
-                        handleOfflineSubmit(this);
-                    }
-                });
-            });
+            console.log('Sistema base inicializado');
         });
-        
-        // Função para lidar com submissões offline
-        function handleOfflineSubmit(form) {
-            const formData = new FormData(form);
-            const dados = {};
-            
-            for (let [key, value] of formData.entries()) {
-                dados[key] = value;
-            }
-            
-            const id = window.offlineManager.salvarDadoOffline('form_submit', {
-                action: form.action,
-                method: form.method,
-                dados: dados
-            });
-            
-            showAlert('Dados salvos para sincronização quando a conexão for restabelecida.', 'warning');
-        }
     </script>
-
+    
     {% block extra_js %}{% endblock %}
 </body>
 </html>

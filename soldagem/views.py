@@ -8,7 +8,6 @@ from django.contrib import messages
 from django.db import transaction
 from datetime import datetime, time, date
 import json
-
 from core.models import Soldador, Usuario
 from core.middleware import mark_for_audit
 from .models import (
@@ -181,7 +180,9 @@ def selecionar_componente(request):
         return redirect('soldagem:apontamento')
     
     modulo = get_object_or_404(Modulo, id=modulo_id)
-    componentes = Componente.objects.filter(ativo=True).order_by('nome')
+    
+    # ALTERAR ESTA LINHA: filtrar componentes pelo módulo
+    componentes = Componente.objects.filter(modulo=modulo, ativo=True).order_by('nome')
     
     context = {
         'modulo': modulo,
@@ -191,6 +192,8 @@ def selecionar_componente(request):
     
     return render(request, 'soldagem/selecionar_componente.html', context)
 
+# Também adicione esta importação no início do arquivo se não existir:
+from django.contrib.auth import logout
 @login_required
 @csrf_exempt
 def iniciar_soldagem(request):
@@ -348,7 +351,10 @@ def finalizar_soldagem(request, apontamento_id):
     
     return JsonResponse({'success': False, 'message': 'Método não permitido'})
 
+from django.contrib.auth import logout
+
 @login_required
+@csrf_exempt
 def finalizar_turno(request):
     """Finalizar turno do soldador"""
     if request.method == 'POST':
@@ -391,7 +397,6 @@ def finalizar_turno(request):
             })
     
     return JsonResponse({'success': False, 'message': 'Método não permitido'})
-
 # APIs para funcionalidade offline
 @csrf_exempt
 def api_status_conexao(request):
